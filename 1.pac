@@ -1,77 +1,180 @@
 // ======================================================================
-// PAC – PUBG Mobile محسّن: بنق مستقر + Failover ديناميكي + UDP + IPv6 أولوية
+// PUBG-JO PAC — FINAL (No DIRECT + YouTube/GitHub Exception)
+// - لا يوجد أي DIRECT في السكربت (فقط PROXY أو BLOCK).
+// - PUBG: يمر حصريًا عبر بروكسيات أردنية (SOCKS5 للماتش + HTTP للباقي).
+// - YouTube / GitHub: مستثناة من البلوك ومنطق JO، لكنها تمر عبر HTTP proxy فقط.
 // ======================================================================
 
 // ======================= CONFIG =======================
+
+// تقسيم البورتات حسب وظيفة PUBG
+var PORTS = {
+  LOBBY:  [443],                                  // Login / Lobby
+  MATCH:  [20001, 20002, 20003, 20004, 20005],   // Game / Match (UDP+TCP عبر SOCKS5)
+  UPDATE: [8080, 3128]                            // تحديثات / تحميل
+};
+
+// بروكسيات داخل الأردن
 var PROXIES_CFG = [
-    { ip: "212.35.66.45",            socksPorts: [20001,20002,1080,8085,10491], httpPorts:[3128,8080] },   // رئيسي IPv4
-    { ip: "46.185.131.218",           socksPorts: [443,20001],                      httpPorts:[443,20002] } // احتياطي IPv4 مع بورتات ثابتة
+  {
+    ip: "212.35.66.45",                           // بروكسي رئيسي (JO)
+    socksPorts: PORTS.MATCH,
+    httpPorts:  PORTS.UPDATE.concat(PORTS.LOBBY)
+  },
+  {
+    ip: "46.185.131.218",                         // بروكسي احتياطي (JO)
+    socksPorts: PORTS.MATCH,
+    httpPorts:  PORTS.UPDATE.concat(PORTS.LOBBY)
+  }
 ];
 
+// لو FORCE_ALL = true → أي ترافيك (غير المستثنى) يمشي على البروكسي
 var FORCE_ALL     = true;
+// حظر صريح لأي دومين ينتهي بـ .ir
 var BLOCK_IR      = true;
+// أي IP أردني (من JO_V4_CIDR) → BLOCK (لأنك ما بدك DIRECT نهائيًا)
 var FORBID_DIRECT = true;
-var ROTATE_INTERVAL = 45000;
 
-// ======================= DOMAINS =======================
+// ======================= PUBG DOMAINS =======================
 var GAME_DOMAINS = [
-    "igamecj.com","igamepubg.com","pubgmobile.com","tencentgames.com",
-    "proximabeta.com","qcloudcdn.com","tencentyun.com","qcloud.com",
-    "gtimg.com","game.qq.com","gameloop.com","proximabeta.net","cdn-ota.qq.com","cdngame.tencentyun.com",
-    "googleapis.com","gstatic.com","googleusercontent.com","play.googleapis.com","firebaseinstallations.googleapis.com",
-    "mtalk.google.com","android.clients.google.com",
-    "apple.com","icloud.com","gamecenter.apple.com","gamekit.apple.com","apps.apple.com",
-    "x.com","twitter.com","api.x.com","abs.twimg.com","pbs.twimg.com","t.co"
+  "igamecj.com","igamepubg.com","pubgmobile.com","tencentgames.com",
+  "proximabeta.com","qcloudcdn.com","tencentyun.com","qcloud.com",
+  "gtimg.com","game.qq.com","gameloop.com","proximabeta.net",
+  "cdn-ota.qq.com","cdngame.tencentyun.com",
+
+  // Google services مرتبطة بـ PUBG
+  "googleapis.com","gstatic.com","googleusercontent.com",
+  "play.googleapis.com","firebaseinstallations.googleapis.com",
+  "mtalk.google.com","android.clients.google.com",
+
+  // Apple services
+  "apple.com","icloud.com","gamecenter.apple.com",
+  "gamekit.apple.com","apps.apple.com",
+
+  // Social login
+  "x.com","twitter.com","api.x.com",
+  "abs.twimg.com","pbs.twimg.com","t.co"
 ];
 
-var KEYWORDS = ["pubg","tencent","igame","proximabeta","qcloud","tencentyun","gcloud","gameloop","match","squad","party","team","rank"];
+var KEYWORDS = [
+  "pubg","tencent","igame","proximabeta","qcloud","tencentyun",
+  "gcloud","gameloop","match","squad","party","team","rank"
+];
+
+// ======================= YOUTUBE / GITHUB EXCEPTIONS =======================
+
+var YT_DOMAINS = [
+  "youtube.com","youtu.be","ytimg.com","googlevideo.com",
+  "yt3.ggpht.com","youtube-nocookie.com"
+];
+
+var GIT_DOMAINS = [
+  "github.com","gist.github.com",
+  "raw.githubusercontent.com","githubusercontent.com"
+];
+
+function isYouTubeHost(host) {
+  for (var i = 0; i < YT_DOMAINS.length; i++) {
+    if (shExpMatch(host, "*" + YT_DOMAINS[i] + "*")) return true;
+  }
+  return false;
+}
+
+function isGitHubHost(host) {
+  for (var i = 0; i < GIT_DOMAINS.length; i++) {
+    if (shExpMatch(host, "*" + GIT_DOMAINS[i] + "*")) return true;
+  }
+  return false;
+}
 
 // ======================= Helpers =======================
-function isIPv6Literal(h){ return h && h.indexOf(":") !== -1; }
 
-function proxyTokensFor(ip,socksPorts,httpPorts){
-    var host = isIPv6Literal(ip) ? "["+ip+"]" : ip, out = [];
-    for(var i=0;i<socksPorts.length;i++){
-        out.push("SOCKS5 "+host+":"+socksPorts[i]); // دعم UDP
-        out.push("SOCKS "+host+":"+socksPorts[i]);
-    }
-    for(var j=0;j<httpPorts.length;j++){
-        out.push("PROXY "+host+":"+httpPorts[j]);
-    }
-    return out;
+function isIPv6Literal(h) {
+  return h && h.indexOf(":") !== -1;
 }
 
-var PROXY_LIST = (function(){
-    var list = [];
-    for(var i=0;i<PROXIES_CFG.length;i++){
-        var p = PROXIES_CFG[i];
-        var toks = proxyTokensFor(p.ip,p.socksPorts||[],p.httpPorts||[]);
-        for(var k=0;k<toks.length;k++) list.push(toks[k]);
+// IPv4 → رقم 32-bit
+function ipToLong(ip) {
+  var parts = ip.split('.');
+  return (((+parts[0] << 24) >>> 0) +
+          ((+parts[1] << 16) >>> 0) +
+          ((+parts[2] <<  8) >>> 0) +
+          ((+parts[3]      ) >>> 0)) >>> 0;
+}
+
+// هل هو دومين/هوست له علاقة بـ PUBG؟
+function isPubgHost(host) {
+  // دومينات PUBG المعروفة
+  for (var i = 0; i < GAME_DOMAINS.length; i++) {
+    if (shExpMatch(host, "*" + GAME_DOMAINS[i] + "*")) {
+      return true;
     }
-    return list;
+  }
+  // كلمات مفتاحية
+  for (var k = 0; k < KEYWORDS.length; k++) {
+    if (host.indexOf(KEYWORDS[k]) !== -1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// بناء قائمة البروكسيات (SOCKS5 للماتش + HTTP للتحديث/اللوجن)
+function proxyTokensFor(ip, socksPorts, httpPorts) {
+  var host = isIPv6Literal(ip) ? "[" + ip + "]" : ip;
+  var out  = [];
+
+  // الماتش → SOCKS5 (يدعم UDP)
+  for (var i = 0; i < socksPorts.length; i++) {
+    out.push("SOCKS5 " + host + ":" + socksPorts[i]);
+  }
+
+  // التحديث + اللوجن → HTTP(S)
+  for (var j = 0; j < httpPorts.length; j++) {
+    out.push("PROXY " + host + ":" + httpPorts[j]);
+  }
+
+  return out;
+}
+
+// قائمة نهائية كاملة (PUBG chain)
+var PROXY_LIST = (function () {
+  var list = [];
+  for (var i = 0; i < PROXIES_CFG.length; i++) {
+    var p    = PROXIES_CFG[i];
+    var toks = proxyTokensFor(p.ip, p.socksPorts || [], p.httpPorts || []);
+    for (var k = 0; k < toks.length; k++) {
+      list.push(toks[k]);
+    }
+  }
+  return list;
 })();
 
-// Failover ديناميكي حسب آخر نجاح
-var LAST_SUCCESS = {}; // {host: proxyIndex}
-
-// ترتيب البروكسي حسب آخر نجاح لضمان بنق مستقر
-function buildProxyChain(host){
-    var proxyOrder = PROXY_LIST.slice();
-    if(LAST_SUCCESS[host] !== undefined){
-        var last = proxyOrder.splice(LAST_SUCCESS[host],1)[0];
-        proxyOrder.unshift(last);
+// Chain خاص لـ YouTube / GitHub (HTTP فقط)
+var YT_GH_PROXY_LIST = (function () {
+  var list = [];
+  for (var i = 0; i < PROXIES_CFG.length; i++) {
+    var p    = PROXIES_CFG[i];
+    var host = isIPv6Literal(p.ip) ? "[" + p.ip + "]" : p.ip;
+    var httpPorts = p.httpPorts || [];
+    for (var j = 0; j < httpPorts.length; j++) {
+      list.push("PROXY " + host + ":" + httpPorts[j]);
     }
-    // حذف DIRECT من السلسلة
-    return proxyOrder.join("; ");
+  }
+  return list;
+})();
+
+function buildProxyChain() {
+  // بدون DIRECT متعمّدًا، عشان كل PUBG يطلع من IP أردني عن طريق البروكسي
+  return PROXY_LIST.join("; ");
 }
 
-// تسجيل نجاح البروكسي الأخير للـ host (جاهز إذا حبيت تستخدمه لاحقاً)
-function markSuccess(host, proxyIndex){
-    LAST_SUCCESS[host] = proxyIndex;
+function buildYTGitProxyChain() {
+  // YouTube / GitHub عبر HTTP فقط
+  return YT_GH_PROXY_LIST.join("; ");
 }
 
 // ======================= Jordan IPv4 CIDR =======================
-// مصفوفة CIDR مرتبة من الأكبر للأصغر (أصغر قيمة mask هي الأكبر)
 var JO_V4_CIDR = [
   { base: "176.29.0.0", mask: 16 },
   { base: "46.185.128.0", mask: 17 },
@@ -201,56 +304,58 @@ var JO_V4_CIDR = [
   { base: "194.110.236.0", mask: 24 }
 ];
 
-// IPv4 → رقم 32-bit (unsigned)
-function ipToLong(ip){
-    var parts = ip.split('.');
-    return (((+parts[0] << 24) >>> 0) +
-            ((+parts[1] << 16) >>> 0) +
-            ((+parts[2] <<  8) >>> 0) +
-            ((+parts[3]      ) >>> 0)) >>> 0;
-}
+// فحص ما إذا كان IPv4 ضمن أحد النطاقات الأردنية
+function isInJordanIPRange(ip) {
+  if (!ip || isIPv6Literal(ip)) return false;
+  var ipNum = ipToLong(ip);
 
-// فحص إذا الـ IP داخل أي CIDR أردني
-function isInJordanIPRange(ip){
-    var ipNum = ipToLong(ip);
+  for (var i = 0; i < JO_V4_CIDR.length; i++) {
+    var c       = JO_V4_CIDR[i];
+    var baseNum = ipToLong(c.base);
+    var maskLen = c.mask;
+    var mask    = (maskLen === 0) ? 0 : ((~0 << (32 - maskLen)) >>> 0);
 
-    for (var i = 0; i < JO_V4_CIDR.length; i++) {
-        var c = JO_V4_CIDR[i];
-        var baseNum = ipToLong(c.base);
-        var maskLen = c.mask;
-        var mask = (maskLen === 0) ? 0 : ((~0 << (32 - maskLen)) >>> 0);
-        if ((ipNum & mask) === (baseNum & mask)) {
-            return true;
-        }
+    if ((ipNum & mask) === (baseNum & mask)) {
+      return true;
     }
-    return false;
+  }
+  return false;
 }
 
 // ======================= Main PAC Function =======================
-function FindProxyForURL(url, host){
-    host = host.toLowerCase();
+function FindProxyForURL(url, host) {
+  host = host.toLowerCase();
 
-    if(BLOCK_IR && host.indexOf(".ir") !== -1) return "BLOCK";
+  // 0) استثناء YouTube / GitHub: لا بلوك ولا منطق JO، لكن عبر HTTP proxy فقط
+  if (isYouTubeHost(host) || isGitHubHost(host)) {
+    return buildYTGitProxyChain();
+  }
 
-    // PUBG + متعلقاتها
-    for(var i=0;i<GAME_DOMAINS.length;i++){
-        if(shExpMatch(host,"*"+GAME_DOMAINS[i]+"*")) return buildProxyChain(host);
+  // 1) حظر .ir لو مفعّل
+  if (BLOCK_IR && (shExpMatch(host, "*.ir") || host.endsWith(".ir"))) {
+    return "BLOCK";
+  }
+
+  // 2) PUBG وكل ما يتعلق بها → حصريًا عبر بروكسيات الأردن (SOCKS5 + HTTP)
+  if (isPubgHost(host)) {
+    return buildProxyChain();
+  }
+
+  // 3) لو الـ IP أردني (من JO_V4_CIDR) و FORBID_DIRECT = true → BLOCK
+  try {
+    var ip = dnsResolve(host);
+    if (ip && isInJordanIPRange(ip) && FORBID_DIRECT) {
+      return "BLOCK";
     }
+  } catch (e) {
+    // لو فشل DNS نكمّل بالقواعد التالية
+  }
 
-    for(var k=0;k<KEYWORDS.length;k++){
-        if(host.indexOf(KEYWORDS[k])!==-1) return buildProxyChain(host);
-    }
+  // 4) لو FORCE_ALL → كل شي (غير مستثنى) يمر عبر البروكسي
+  if (FORCE_ALL) {
+    return buildProxyChain();
+  }
 
-    // أي IP مساره أردني → إمّا BLOCK أو استخدام مباشر (مع مراعاة FORBID_DIRECT)
-    try{
-        var ip = dnsResolve(host);
-        if(ip && !isIPv6Literal(ip) && isInJordanIPRange(ip)){
-            return FORBID_DIRECT ? "BLOCK" : "DIRECT";
-        }
-    }catch(e){
-        return buildProxyChain(host);
-    }
-
-    // إذا FORCE_ALL=true أو خارج نطاق الشروط أعلاه → استخدم البروكسي
-    return buildProxyChain(host);
+  // 5) لا يوجد DIRECT أبدًا، fallback دايمًا بروكسي
+  return buildProxyChain();
 }
