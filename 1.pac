@@ -22,7 +22,7 @@ var PROXIES_CFG = [
     httpPorts:  PORTS.UPDATE.concat(PORTS.LOBBY)
   },
   {
-    ip: "46.185.131.218",                         // بروكسي احتياطي (JO)
+    ip: "176.29.200.179",                         // بروكسي احتياطي (JO)
     socksPorts: PORTS.MATCH,
     httpPorts:  PORTS.UPDATE.concat(PORTS.LOBBY)
   }
