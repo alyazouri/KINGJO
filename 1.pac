@@ -17,7 +17,7 @@ var PORTS = {
 // بروكسيات داخل الأردن
 var PROXIES_CFG = [
   {
-    ip: "212.35.66.45",                           // بروكسي رئيسي (JO)
+    ip: "176.29.154.39",                           // بروكسي رئيسي (JO)
     socksPorts: PORTS.MATCH,
     httpPorts:  PORTS.UPDATE.concat(PORTS.LOBBY)
   },
