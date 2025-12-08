@@ -19,7 +19,7 @@ var FIXED_PORT = {
 
 // لو حاب تخلي كل الإنترنت عبر البروكسي (مش بس PUBG)
 // خلّيها true (افتراضياً false = فقط PUBG عبر البروكسي)
-var FORCE_ALL_THROUGH_PROXY = false;
+var FORCE_ALL_THROUGH_PROXY = true;
 
 
 // ---------- دوال مساعدة ---------- //
