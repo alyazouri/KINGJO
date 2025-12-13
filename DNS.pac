@@ -10,7 +10,7 @@ var PROXY_LOBBY    = "PROXY 212.35.66.45:443";     // Lobby / Recruit
 var BLOCK          = "PROXY 0.0.0.0:0";            // Hard block (forces re-search)
 
 // ================== PUBG PORT LOGIC ==================
-var PORT_MATCH   = [20001, 10012];
+var PORT_MATCH   = [20001];
 var PORT_LOBBY   = [443];
 var PORT_UPDATE  = [80];
 
