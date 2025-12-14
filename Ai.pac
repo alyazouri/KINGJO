@@ -20,9 +20,9 @@ primary: “PROXY 212.35.66.45:443”,      // Main Match - HTTPS Stable
 voice: “PROXY 212.35.66.45:3478”        // Voice UDP - Crystal Clear
 },
 
-// Tier 2: High Performance (5-10ms)
+// Tier 2: High Performance (5-10ms) - LOBBY OPTIMIZED
 HIGH: {
-lobby: “PROXY 46.185.131.218:8080”,     // Fast Lobby
+lobby: “PROXY 212.35.66.45:443”,        // 🚀 FAST Lobby - نفس السرفر الرئيسي
 secondary: “PROXY 46.185.131.218:443”   // Backup HTTPS
 },
 
@@ -48,6 +48,8 @@ PING_THRESHOLD_MS: 100,             // حد أقصى للبنق المقبول
 POOL_SIZE: 5,                       // عدد الاتصالات الجاهزة
 POOL_PRELOAD: true,                 // تحميل مسبق
 POOL_REFRESH: 300000,               // تحديث كل 5 دقائق
+LOBBY_FAST_TRACK: true,             // 🚀 مسار سريع للوبي (جديد)
+LOBBY_PRECONNECT: true,             // 🚀 اتصال مسبق للوبي
 
 // Voice Quality (جودة الصوت)
 VOICE_BUFFER: 20,                   // 20ms buffer (أقل تأخير)
@@ -99,7 +101,7 @@ PROFILES: {
 CURRENT: {
   MATCH: 1492,                    // MTU للماتشات (Default: 1492)
   VOICE: 1350,                    // MTU للصوت (Default: 1350)
-  LOBBY: 1500,                    // MTU للوبي (Default: 1500)
+  LOBBY: 1492,                    // MTU للوبي - محسّن للسرعة (كان 1500)
   DEFAULT: 1492                   // MTU افتراضي (Default: 1492)
 },
 
@@ -141,13 +143,14 @@ buffer: 20,                // 20ms للوضوح
 udp: true                  // UDP Protocol
 },
 
-// Lobby Ports - منافذ اللوبي (Fast Response)
+// Lobby & Services - SPEED OPTIMIZED
 LOBBY: {
-ports: [443, 8080, 17500, 18081],
-proxy: “HIGH.lobby”,
-sticky: false,             // يمكن التبديل
-priority: 80,
-buffer: 0
+ports: [443,8080,17500,18081],
+proxy: “ULTRA.primary”,            // 🚀 نفس بروكسي الماتش (أسرع)
+sticky: false,                     // لا تثبيت (مرونة)
+priority: 90,                      // أولوية عالية جداً
+buffer: 0,                         // صفر تأخير
+fastPath: true                     // مسار سريع
 },
 
 // Update Ports - منافذ التحديث
@@ -590,12 +593,17 @@ return fullPath;
 
 }
 
-// === 🏠 LOBBY: Fast Response Path ===
+// === 🏠 LOBBY: Ultra Fast Response Path ===
 if (portType === “LOBBY”) {
-var lobbyProxy = getProxyFromTier(portConfig.proxy);
+var lobbyProxy = getProxyFromTier(portConfig.proxy);  // ULTRA.primary (same as match)
 var optimizedLobbyProxy = applyMTUToProxy(lobbyProxy, “LOBBY”);
-createSession(ip, optimizedLobbyProxy, portType);
+
+```
+// No session pinning for lobby - maximum flexibility & speed
+// Direct routing without caching for instant response
 return optimizedLobbyProxy;
+```
+
 }
 
 // === 📦 UPDATE: Stable Download Path ===
@@ -716,7 +724,7 @@ return PROXY_TIER.HIGH.secondary;
 // ––––––––––
 // • VOICE → 212.35.66.45:3478 (UDP Dedicated, MTU 1350)
 // • MATCH → 212.35.66.45:443 (HTTPS Stable, MTU 1492)
-// • LOBBY → 46.185.131.218:8080 (Fast HTTP, MTU 1500)
+// • LOBBY → 212.35.66.45:443 (🚀 ULTRA FAST - نفس الماتش، MTU 1492)
 // • EMERGENCY → 212.35.66.45:8080 (Last Resort)
 //
 // 🔧 MTU CONFIGURATION GUIDE:
