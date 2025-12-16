@@ -1,16 +1,15 @@
 // ===================================================
-//  PUBG – JO ULTRA LOCAL PAC (FINAL)
-//  - Fix iOS "No Internet Connection" (Apple connectivity)
-//  - PUBG only: keep JO endpoints DIRECT
-//  - Soft-block first 2 tries for non-JO endpoints then DIRECT (no stuck)
-//  - GitHub raw bypass
+//  PUBG – JO LOCAL PAC (NO BLOCK)  ✅
+//  - No BLOCK at all (iOS will always see Internet)
+//  - Apple connectivity always DIRECT
+//  - PUBG: if destination resolves to JO IP => DIRECT (local bias)
+//  - Everything else DIRECT
 //  DNS (set in iOS manually):
 //    213.139.57.12
 //    213.139.57.100
 // ===================================================
 
 var DIRECT_OK = "DIRECT";
-var BLOCK     = "PROXY 0.0.0.0:0";
 
 // -------- Apple connectivity (prevents "No Internet") --------
 var APPLE_OK = [
@@ -19,7 +18,10 @@ var APPLE_OK = [
   "icloud.com",
   "itunes.apple.com",
   "apps.apple.com",
-  "mzstatic.com"
+  "mzstatic.com",
+  "guzzoni.apple.com",
+  "configuration.apple.com",
+  "mesu.apple.com"
 ];
 
 // -------- PUBG ports --------
@@ -57,10 +59,6 @@ var JO_NETS = [
   ["213.139.32.0","255.255.224.0"]    // /19
 ];
 
-// -------- Soft-block counter (memory) --------
-var ATT = {};
-function incTry(k){ var v = ATT[k] || 0; v++; ATT[k] = v; return v; }
-
 function inList(host, arr){
   for (var i=0;i<arr.length;i++){
     if (dnsDomainIs(host, arr[i])) return true;
@@ -90,10 +88,10 @@ function isJOip(ip){
 
 function FindProxyForURL(url, host){
 
-  // 1) Fix iOS internet check
+  // 1) Apple connectivity always DIRECT (fixes iOS status)
   if (inList(host, APPLE_OK)) return DIRECT_OK;
 
-  // 2) Bypass GitHub raw
+  // 2) GitHub bypass
   if (inList(host, BYPASS_DOMAINS)) return DIRECT_OK;
 
   // Parse port
@@ -101,21 +99,15 @@ function FindProxyForURL(url, host){
   var idx = url.lastIndexOf(":");
   if (idx > 6) port = parseInt(url.substring(idx+1)) || 0;
 
-  // 3) PUBG logic only
+  // 3) PUBG: keep JO endpoints local DIRECT when possible
   if (isPUBG(host, port)) {
     var ip = dnsResolve(host);
-
-    // If destination resolves to JO IP => keep it local DIRECT
     if (ip && ip != "0.0.0.0" && isJOip(ip)) return DIRECT_OK;
 
-    // Non-JO: soft-block first 2 tries to encourage re-selection
-    var key = host + ":" + port;
-    if (incTry(key) <= 2) return BLOCK;
-
-    // After tries: don't break the game
+    // No block, no proxy: keep game stable
     return DIRECT_OK;
   }
 
-  // 4) Everything else
+  // 4) Everything else DIRECT
   return DIRECT_OK;
 }
