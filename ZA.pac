@@ -1,92 +1,219 @@
-// ===================================================
-//  PUBG Mobile – JO vs JO ENFORCER (EXTREME)
-//  - Highest pressure to force re-search (may take longer)
-//  - MATCH chain is SHORT + FAST-Fail (2 hops only) then BLOCK
-//  - LOBBY chain is SHORT (entry stable) then BLOCK
-//  - NO DIRECT internet leaks
-//  - DIRECT allowed ONLY for: proxy servers themselves + GitHub
-// ===================================================
+function FindProxyForURL(url, host) {
 
-var BLOCK = "PROXY 0.0.0.0:0";
+```
+// ═══════════════════════════════════════════════════════════
+// PUBG MOBILE & PC - ADVANCED PAC CONFIGURATION
+// Optimized for Jordan Players - Maximum Performance
+// ═══════════════════════════════════════════════════════════
 
-// ==== Proxy IPs (DIRECT only to reach them) ====
-var PROXY_IPS = [
-  // LOBBY proxies
-  "82.212.67.62","46.32.101.59","82.212.67.26","46.32.101.18","46.185.138.227",
-  // MATCH proxies
-  "82.212.67.18","77.245.14.135"
+// البروكسيات الأردنية المتطورة - مرتبة حسب الأداء
+var jordanProxies = [
+    "PROXY 212.118.1.149:8080",      // NETS - الأسرع
+    "PROXY 212.118.1.10:8080",       // NETS - احتياطي
+    "PROXY 212.118.28.179:8080",     // NETS - عالي الأداء
+    "PROXY 212.35.79.196:8080",      // BATELCO - موثوق
+    "PROXY 188.247.66.0:8080",       // JO-LINK - متوازن
+    "PROXY 212.118.22.2:8080"        // NETS - استقرار
 ];
 
-// ==== GitHub domains (DIRECT allowed) ====
-function isGitHub(host){
-  host = (host || "").toLowerCase();
-  return (
-    shExpMatch(host, "github.com") ||
-    shExpMatch(host, "*.github.com") ||
-    shExpMatch(host, "raw.githubusercontent.com") ||
-    shExpMatch(host, "*.githubusercontent.com") ||
-    shExpMatch(host, "*.githubassets.com")
-  );
+// نظام التوزيع الذكي للبروكسيات
+var primaryProxy = jordanProxies[0] + "; " + jordanProxies[1];
+var secondaryProxy = jordanProxies[2] + "; " + jordanProxies[3];
+var backupProxy = jordanProxies[4] + "; " + jordanProxies[5];
+
+// ═══════════════════════════════════════════════════════════
+// PUBG MOBILE - نطاقات اللعبة الرئيسية
+// ═══════════════════════════════════════════════════════════
+
+var pubgMobileDomains = [
+    // خوادم اللعبة الأساسية
+    "*.pubgmobile.com",
+    "*.pubgm.com",
+    "*.igamecj.com",
+    "*.proximabeta.com",
+    "*.anticheatexpert.com",
+    
+    // Tencent Cloud Infrastructure
+    "*.tencentcs.com",
+    "*.tencent.com",
+    "*.myqcloud.com",
+    "*.qcloud.com",
+    
+    // خوادم الشرق الأوسط
+    "*.intl.pubgmobile.com",
+    "*.me.pubgmobile.com",
+    "mena*.pubgmobile.com",
+    
+    // APIs & Authentication
+    "api*.pubgmobile.com",
+    "auth*.pubgmobile.com",
+    "login*.pubgmobile.com",
+    "account*.pubgmobile.com",
+    
+    // Game Assets & Updates
+    "cdn*.pubgmobile.com",
+    "dl*.pubgmobile.com",
+    "download*.pubgmobile.com",
+    "update*.pubgmobile.com",
+    
+    // Matchmaking & Stats
+    "match*.pubgmobile.com",
+    "stat*.pubgmobile.com",
+    "rank*.pubgmobile.com",
+    
+    // Voice Chat
+    "voice*.pubgmobile.com",
+    "rtc*.pubgmobile.com"
+];
+
+// ═══════════════════════════════════════════════════════════
+// PUBG PC (STEAM) - نطاقات اللعبة
+// ═══════════════════════════════════════════════════════════
+
+var pubgPCDomains = [
+    "*.playbattlegrounds.com",
+    "*.battlegrounds.com",
+    "*.pubg.com",
+    "*.pubgapi.com",
+    "*.bluehole.net",
+    "*.krafton.com",
+    
+    // Game Servers
+    "prod*.playbattlegrounds.com",
+    "live*.playbattlegrounds.com",
+    "as*.playbattlegrounds.com",
+    "eu*.playbattlegrounds.com",
+    "me*.playbattlegrounds.com"
+];
+
+// ═══════════════════════════════════════════════════════════
+// تحسينات خاصة بالشرق الأوسط والأردن
+// ═══════════════════════════════════════════════════════════
+
+// تحديد نطاقات PUBG الكاملة
+var allPubgDomains = pubgMobileDomains.concat(pubgPCDomains);
+
+// التحقق من نطاقات اللعبة
+for (var i = 0; i < allPubgDomains.length; i++) {
+    if (shExpMatch(host, allPubgDomains[i])) {
+        
+        // ═══ نظام التوجيه الذكي حسب نوع الاتصال ═══
+        
+        // 1. اتصالات اللعب المباشر (أعلى أولوية)
+        if (shExpMatch(url, "*match*") || 
+            shExpMatch(url, "*game*") || 
+            shExpMatch(url, "*server*") ||
+            shExpMatch(host, "*.prod.*") ||
+            shExpMatch(host, "*.live.*")) {
+            return primaryProxy;
+        }
+        
+        // 2. Voice Chat (أولوية عالية لتقليل التأخير)
+        if (shExpMatch(url, "*voice*") || 
+            shExpMatch(url, "*rtc*") || 
+            shExpMatch(url, "*audio*")) {
+            return primaryProxy;
+        }
+        
+        // 3. التحديثات والتنزيلات (أولوية متوسطة)
+        if (shExpMatch(url, "*download*") || 
+            shExpMatch(url, "*update*") || 
+            shExpMatch(url, "*cdn*") ||
+            shExpMatch(url, "*dl.*")) {
+            return secondaryProxy;
+        }
+        
+        // 4. APIs والمصادقة
+        if (shExpMatch(url, "*api*") || 
+            shExpMatch(url, "*auth*") || 
+            shExpMatch(url, "*login*")) {
+            return primaryProxy;
+        }
+        
+        // 5. الإحصائيات والترتيب
+        if (shExpMatch(url, "*stat*") || 
+            shExpMatch(url, "*rank*") || 
+            shExpMatch(url, "*leaderboard*")) {
+            return secondaryProxy;
+        }
+        
+        // جميع طلبات PUBG الأخرى
+        return primaryProxy;
+    }
 }
 
-// ==== PUBG detection (tight) ====
-function isPubgHost(h){
-  h = (h || "").toLowerCase();
-  return (
-    shExpMatch(h,"*pubg*") ||
-    shExpMatch(h,"*proximabeta*") ||
-    shExpMatch(h,"*tencent*") ||
-    shExpMatch(h,"*gcloud*") ||
-    shExpMatch(h,"*igame*") ||
-    shExpMatch(h,"*qcloud*") ||
-    shExpMatch(h,"*gp.qq.com*") ||
-    shExpMatch(h,"*qq.com*")
-  );
+// ═══════════════════════════════════════════════════════════
+// نطاقات IP خاصة بخوادم PUBG في الشرق الأوسط
+// ═══════════════════════════════════════════════════════════
+
+// Tencent Cloud - Middle East Servers
+if (isInNet(host, "43.129.0.0", "255.255.0.0") ||     // Tencent ME
+    isInNet(host, "43.130.0.0", "255.255.0.0") ||     // Tencent ME
+    isInNet(host, "43.131.0.0", "255.255.0.0") ||     // Tencent ME
+    isInNet(host, "170.106.0.0", "255.255.0.0") ||    // Singapore Servers
+    isInNet(host, "152.136.0.0", "255.255.0.0") ||    // Tencent Cloud
+    isInNet(host, "118.107.0.0", "255.255.0.0")) {    // Asia Servers
+    return primaryProxy;
 }
 
-// ==== EXTREME CHAINS ====
-// Lobby/auth: keep it short; if these fail -> BLOCK (forces retry/login loop but max pressure)
-var LOBBY_CHAIN =
-  "PROXY 82.212.67.62:443; " +
-  "PROXY 46.32.101.59:443; " +
-  BLOCK;
-
-// Match: FAST-Fail (only 2 best) then BLOCK (forces re-search hard)
-var MATCH_CHAIN =
-  "PROXY 82.212.67.18:20001; " +
-  "PROXY 77.245.14.135:10012; " +
-  BLOCK;
-
-// Everything else: still through lobby proxies (no DIRECT leak)
-var ALL_OTHER_CHAIN =
-  "PROXY 82.212.67.62:443; " +
-  "PROXY 46.32.101.59:443; " +
-  BLOCK;
-
-// ==== Helper ====
-function isProxyIP(h){
-  for (var i=0;i<PROXY_IPS.length;i++) if (h===PROXY_IPS[i]) return true;
-  return false;
+// AWS Middle East (Bahrain) - PUBG Servers
+if (isInNet(host, "15.184.0.0", "255.255.0.0") ||     // AWS Bahrain
+    isInNet(host, "15.185.0.0", "255.255.0.0")) {     // AWS Bahrain
+    return primaryProxy;
 }
 
-// ==== MAIN ====
-function FindProxyForURL(url, host){
+// ═══════════════════════════════════════════════════════════
+// خدمات إضافية مهمة للألعاب
+// ═══════════════════════════════════════════════════════════
 
-  // 1) DIRECT only to reach proxy servers themselves (prevents iOS deadlock)
-  if (isProxyIP(host)) return "DIRECT";
-
-  // 2) GitHub DIRECT so you can read scripts
-  if (isGitHub(host)) return "DIRECT";
-
-  // 3) PUBG EXTREME routing
-  if (isPubgHost(host)) {
-    // HTTPS = login/lobby/auth
-    if (shExpMatch(url,"https://*")) return LOBBY_CHAIN;
-    // Non-HTTPS PUBG = treat as match pressure
-    return MATCH_CHAIN;
-  }
-
-  // 4) Everything else (no direct)
-  if (shExpMatch(url,"https://*")) return ALL_OTHER_CHAIN;
-  return ALL_OTHER_CHAIN;
+// Discord (للتواصل مع الفريق)
+if (shExpMatch(host, "*.discord.com") || 
+    shExpMatch(host, "*.discordapp.com")) {
+    return secondaryProxy;
 }
+
+// Steam (لـ PUBG PC)
+if (shExpMatch(host, "*.steampowered.com") || 
+    shExpMatch(host, "*.steamcontent.com") ||
+    shExpMatch(host, "*.steamstatic.com")) {
+    return secondaryProxy;
+}
+
+// Cloudflare CDN (تستخدمه بعض خدمات الألعاب)
+if (shExpMatch(host, "*.cloudflare.com") ||
+    shExpMatch(host, "*.cloudflarecdns.com")) {
+    return backupProxy;
+}
+
+// ═══════════════════════════════════════════════════════════
+// نظام الفشل الآمن (Failover)
+// ═══════════════════════════════════════════════════════════
+
+// المواقع المهمة الأخرى تستخدم نظام احتياطي
+if (shExpMatch(host, "*.google.com") ||
+    shExpMatch(host, "*.googleapis.com") ||
+    shExpMatch(host, "*.facebook.com") ||
+    shExpMatch(host, "*.whatsapp.com")) {
+    return backupProxy;
+}
+
+// ═══════════════════════════════════════════════════════════
+// لا يوجد DIRECT - كل الاتصالات عبر البروكسي
+// ═══════════════════════════════════════════════════════════
+
+// جميع الطلبات الأخرى تمر عبر البروكسي الاحتياطي
+return backupProxy;
+```
+
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ملاحظات مهمة للاستخدام الأمثل:
+// ═══════════════════════════════════════════════════════════════
+// 1. تأكد من أن البروكسيات تعمل وتدعم المنافذ المذكورة
+// 2. يمكنك تغيير المنافذ حسب إعدادات البروكسي الخاص بك
+// 3. السكربت يعطي أولوية قصوى لاتصالات اللعب المباشر
+// 4. Voice Chat له معاملة خاصة لتقليل التأخير (Lag)
+// 5. لا يوجد DIRECT - كل شيء يمر عبر البروكسيات الأردنية
+// 6. نظام Failover تلقائي في حال فشل أي بروكسي
+// ═══════════════════════════════════════════════════════════════
