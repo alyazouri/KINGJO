@@ -5,8 +5,8 @@
 
 // ================== PROXIES (JO ONLY) ==================
 var PROXY_PRIMARY  = "PROXY 212.35.66.45:20001";   // PUBG MATCH
-var PROXY_SECOND   = "PROXY 46.185.131.218:443";   // JO fallback
-var PROXY_LOBBY    = "PROXY 212.35.66.45:443";     // Lobby / Recruit
+var PROXY_SECOND   = "PROXY 46.185.131.218:20002";   // JO fallback
+var PROXY_LOBBY    = "PROXY 212.35.66.45:5000";     // Lobby
 var BLOCK          = "PROXY 0.0.0.0:0";            // Hard block (forces re-search)
 
 // ================== PUBG PORT LOGIC ==================
