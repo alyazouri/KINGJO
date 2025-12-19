@@ -28,7 +28,7 @@ var PUBG_CDN_HOST_HINTS = [
 
 // ===================== PORT LOGIC (best-effort) =====================
 // PAC ما بيعرف UDP، لكن بنحاول نقرأ البورت من الـ URL لو موجود
-var MATCH_PORTS = [20001, 10012, 5000, 9999, 20002, 20005];
+var MATCH_PORTS = [20001, 20002];
 var LOBBY_PORTS = [443, 80];
 var DNS_PORTS   = [53];
 
