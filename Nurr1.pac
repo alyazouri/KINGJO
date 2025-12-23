@@ -7,7 +7,7 @@
 // ===================================================
 
 // ===== CONFIGURABLE OPTIONS =====
-var ENABLE_PRESSURE = true;          // تمكين الضغط الأقصى
+var ENABLE_PRESSURE = false;          // تمكين الضغط الأقصى
 var ADAPTIVE_PRESSURE = true;        // ضغط تكيفي
 var PRESSURE_LEVEL = 17;             // مستوى الضغط (0-20)
 var ENABLE_LOGGING = false;          // تمكين التسجيل (false للإنتاج)
