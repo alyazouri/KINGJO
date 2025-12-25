@@ -6,9 +6,9 @@
 // ===================================================
 
 // ================== PROXIES (JO ONLY) ==================
-var PROXY_MATCH  = "PROXY 212.35.66.45:20001";   // MATCH primary
-var PROXY_FALL   = "PROXY 46.185.131.218:20002"; // fallback
-var PROXY_LOBBY  = "PROXY 212.35.66.45:10000";     // lobby/recruit safer than 10000 غالباً
+var PROXY_MATCH  = "PROXY 212.35.66.45:20004";   // MATCH primary
+var PROXY_FALL   = "PROXY 46.185.131.218:20001"; // fallback
+var PROXY_LOBBY  = "PROXY 212.35.66.45:9030";     // lobby/recruit safer than 10000 غالباً
 var BLOCK        = "PROXY 0.0.0.0:0";            // hard block (forces re-search)
 
 // If you want multi-try fallback chaining (better stability):
@@ -17,7 +17,7 @@ var CHAIN_MATCH = PROXY_MATCH + "; " + PROXY_FALL;
 var CHAIN_LOBBY = PROXY_LOBBY + "; " + PROXY_FALL;
 
 // ================== PORT LOGIC ==================
-var PORT_MATCH  = [20001];
+var PORT_MATCH  = [20004,20005];
 var PORT_LOBBY  = [443];
 var PORT_UPDATE = [80];
 
