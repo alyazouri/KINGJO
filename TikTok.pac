@@ -31,5 +31,5 @@ function FindProxyForURL(url, host) {
     }
 
     // لكل المواقع الأخرى: مباشر للسرعة
-    return "DIRECT";
+    return "proxies";
 }
